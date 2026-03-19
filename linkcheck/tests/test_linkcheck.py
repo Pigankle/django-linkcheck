@@ -444,6 +444,23 @@ class ExternalCheckTestCase(LiveServerTestCase):
         self.assertEqual(uv.redirect_to, '')
         self.assertEqual(uv.type, 'external')
 
+    def test_external_check_get_only_500(self):
+        # A server that returns 500 to HEAD but 200 to GET (e.g. Apache/W3TC misconfiguration)
+        # linkcheck should fall back to GET and mark the URL as working.
+        uv = Url(url=f"{self.live_server_url}/http/getonly/500/")
+        uv.check_url()
+        self.assertEqual(uv.message, '200 OK')
+        self.assertEqual(uv.get_message, 'Working external link')
+        self.assertEqual(uv.error_message, '')
+        self.assertEqual(uv.status, True)
+        self.assertEqual(uv.anchor_message, '')
+        self.assertEqual(uv.ssl_status, None)
+        self.assertEqual(uv.ssl_message, 'Insecure link')
+        self.assertEqual(uv.get_status_code_display(), '200 OK')
+        self.assertEqual(uv.get_redirect_status_code_display(), None)
+        self.assertEqual(uv.redirect_to, '')
+        self.assertEqual(uv.type, 'external')
+
     @requests_mock.Mocker()
     def test_external_check_unreachable(self, mocker):
         exc = ConnectionError(
